@@ -1,10 +1,10 @@
 package WordCountMapper.wordCount;
 
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapred.*;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.StringTokenizer;
@@ -34,7 +34,39 @@ public class myMapper {
                 sum += values.next().get();
             }
 
-            output.collect(key,new IntWritable(sum));
+            output.collect(key, new IntWritable(sum));
+        }
+    }
+
+    private static class CompositeGroupKey implements WritableComparable<CompositeGroupKey> {
+
+        String country;
+        String state;
+
+        @Override
+        public int compareTo(CompositeGroupKey pop) {
+            if (pop == null) {
+                return 0;
+            }
+            int inCnt = country.compareTo(pop.country);
+            return inCnt == 0 ? state.compareTo(pop.state) : inCnt;
+        }
+
+        @Override
+        public void write(DataOutput out) throws IOException {
+            WritableUtils.writeString(out, country);
+            WritableUtils.writeString(out, state);
+        }
+
+        @Override
+        public void readFields(DataInput dataInput) throws IOException {
+            this.country = WritableUtils.readString(dataInput);
+            this.state = WritableUtils.readString(dataInput);
+        }
+
+        @Override
+        public String toString() {
+            return country.toString() + ":" + state.toString();
         }
     }
 }
